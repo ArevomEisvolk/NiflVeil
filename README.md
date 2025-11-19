@@ -1,5 +1,4 @@
 ![niflveil-logo-complete](https://github.com/user-attachments/assets/74032954-8770-460d-87f0-c2057328197a)
-# IMPORTANT: The eww interface is optional, I haven't improved upon the UI (might be buggy) as I don't use it myself. It is far more ergonomic to use the keybindings.
 
 # NiflVeil
 From the creator of [StygianSift](https://github.com/Mauitron/StygianSift) comes NiflVeil - a minimalistic window minimizer for Hyprland, named after Niflheim's mystical veil of mists where things vanish from sight but remain within reach. If you enjoy NiflVeil or want to see more tools from my workshop in Niflheim, consider buying me some [mead](https://buymeacoffee.com/charon0) 🍺
@@ -13,7 +12,7 @@ Greetings, mortals! I am the keeper of the mists, formerly known as that boat gu
 ### Core Features
 
 - Window Veiling: Send your windows to Niflheim's mists, retrieve them when needed
-- EWW Integration: To let you peer across the veil with style
+- Rofi Integration: A sleek dmenu-style interface to peer across the veil with style
 - Waybar Support: Keep track of your hidden treasures
 - Window State Persistence: Like Yggdrasil's roots, always remembering
 - Window Previews: Capture the essence of your windows before they fade into the mists *(Currently under development)*
@@ -22,7 +21,7 @@ Greetings, mortals! I am the keeper of the mists, formerly known as that boat gu
 ## 🛠️ Dependencies
 
 - hyprland (your vessel through the desktop seas)
-- eww (optional, but required for the restore menu interface)
+- rofi (required for the restore menu interface)
 - waybar (optional, but recommended for keeping track of your veiled windows)
 
 ## Installation
@@ -46,25 +45,28 @@ sudo cp target/release/niflveil /usr/local/bin/
 ```bash
 # Suggested NiflVeil bindings
 
-# Minimize current window and updates the interface
+# Minimize current window
 bind = $mainMod, M, exec, /usr/local/bin/niflveil minimize
 
-
-# Opens the EWW interface              
+# Opens the rofi restore menu
 bind = $mainMod, I, exec, /usr/local/bin/niflveil restore
 
 # Restore the last minimized window
 bind = SUPER, U, exec, /usr/local/bin/niflveil restore-last
 
-# Restore all minimized windows 
+# Restore all minimized windows
 bind = $mainMod SHIFT, U, exec, /usr/local/bin/niflveil restore-all
-
-# PS: If you are using the EWW window, add the following to the end
-# of the bindings: "&& eww reload --config /etc/xdg/eww/widgets/niflveil"
-
 ```
 
-### 3. (Optional) Add Waybar integration by adding this to your Waybar config:
+### 3. (Optional) Install the Nord-themed rofi theme:
+
+```bash
+# Copy the theme to your rofi config
+mkdir -p ~/.config/rofi
+cp niflveil/rofi/niflveil.rasi ~/.config/rofi/
+```
+
+### 4. (Optional) Add Waybar integration by adding this to your Waybar config:
 
 ```json
 {
@@ -95,7 +97,7 @@ And add this to your Waybar style.css:
 ## Usage
 
 - Press Super + M to minimize the current window
-- Press Super + I to show the restore menu via EWW
+- Press Super + I to show the rofi restore menu (with search/filter support)
 - Press Super + U to restore the most recently minimized window
 - Press Super + Shift + U to restore all minimized windows
 

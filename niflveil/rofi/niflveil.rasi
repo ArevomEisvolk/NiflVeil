@@ -1,0 +1,113 @@
+/* NiflVeil Rofi Theme - Nord Color Scheme */
+
+* {
+    /* Nord Colors */
+    nord0:  #2E3440;
+    nord1:  #3B4252;
+    nord2:  #434C5E;
+    nord3:  #4C566A;
+    nord4:  #D8DEE9;
+    nord5:  #E5E9F0;
+    nord6:  #ECEFF4;
+    nord7:  #8FBCBB;
+    nord8:  #88C0D0;
+    nord9:  #81A1C1;
+    nord10: #5E81AC;
+    nord11: #BF616A;
+    nord12: #D08770;
+    nord13: #EBCB8B;
+    nord14: #A3BE8C;
+    nord15: #B48EAD;
+
+    /* Theme Colors */
+    background-color: transparent;
+    text-color: @nord4;
+    font: "JetBrainsMono Nerd Font 12";
+}
+
+window {
+    background-color: @nord0;
+    border: 2px solid;
+    border-color: @nord8;
+    border-radius: 8px;
+    padding: 10px;
+    width: 600px;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [inputbar, message, listview];
+    spacing: 10px;
+}
+
+inputbar {
+    background-color: @nord1;
+    border-radius: 6px;
+    padding: 10px;
+    children: [prompt, entry];
+    spacing: 10px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @nord8;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @nord4;
+    placeholder: "Type to filter...";
+    placeholder-color: @nord3;
+}
+
+message {
+    background-color: @nord1;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @nord9;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    scrollbar: true;
+    spacing: 4px;
+}
+
+scrollbar {
+    background-color: @nord1;
+    handle-color: @nord8;
+    handle-width: 4px;
+    border-radius: 2px;
+}
+
+element {
+    background-color: @nord1;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+element normal.normal {
+    background-color: @nord1;
+    text-color: @nord4;
+}
+
+element selected.normal {
+    background-color: @nord8;
+    text-color: @nord0;
+}
+
+element alternate.normal {
+    background-color: @nord2;
+    text-color: @nord4;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    highlight: bold underline;
+}

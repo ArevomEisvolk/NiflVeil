@@ -200,50 +200,107 @@ fn restore_all_windows() -> io::Result<()> {
 }
 
 fn show_restore_menu() -> io::Result<()> {
-    println!("Starting restore menu...");
-
     if !Path::new(CACHE_FILE).exists() {
-        println!("Cache file does not exist");
         return Ok(());
     }
 
     let content = fs::read_to_string(CACHE_FILE)?;
-    println!("Read cache file content: {}", content);
-
     let windows = parse_windows_from_json(&content)?;
-    println!("Parsed {} windows", windows.len());
 
     if windows.is_empty() {
-        println!("No minimized windows");
         return Ok(());
     }
 
-    let eww_result = Command::new("eww")
-        .args([
-            "--config",
-            "/etc/xdg/eww/widgets/niflveil/",
-            "open",
-            "niflveil",
-        ])
-        .output()?;
+    // Build rofi input: each line is "icon class - title [addr]"
+    // We'll use the address as a hidden identifier at the end
+    let mut rofi_input = String::new();
 
-    if !eww_result.status.success() {
-        println!(
-            "Eww command failed: {}",
-            String::from_utf8_lossy(&eww_result.stderr)
-        );
-    } else {
-        println!("Eww window opened successfully");
+    // Add "Restore All" option if more than one window
+    if windows.len() > 1 {
+        rofi_input.push_str("󰁯 Restore All Windows\n");
     }
 
-    Command::new("eww")
-        .args([
-            "--config",
-            "/etc/xdg/eww/widgets/niflveil/",
-            "close",
-            "niflveil",
-        ])
-        .output()?;
+    for window in &windows {
+        rofi_input.push_str(&format!(
+            "{} {} - {} [{}]\n",
+            window.icon,
+            window.class,
+            window.original_title,
+            &window.address[window.address.len().saturating_sub(4)..]
+        ));
+    }
+
+    // Remove trailing newline
+    rofi_input = rofi_input.trim_end().to_string();
+
+    // Run rofi in dmenu mode
+    // Check for custom theme at ~/.config/rofi/niflveil.rasi
+    let home = env::var("HOME").unwrap_or_default();
+    let theme_path = format!("{}/.config/rofi/niflveil.rasi", home);
+    let theme_exists = Path::new(&theme_path).exists();
+
+    let mut args = vec![
+        "-dmenu".to_string(),
+        "-i".to_string(),
+        "-p".to_string(),
+        "󰘸 Restore Window".to_string(),
+        "-mesg".to_string(),
+        format!("{} minimized window(s)", windows.len()),
+    ];
+
+    if theme_exists {
+        args.push("-theme".to_string());
+        args.push(theme_path);
+    } else {
+        // Fallback inline styling
+        args.push("-theme-str".to_string());
+        args.push("window {width: 600px;} listview {lines: 8;}".to_string());
+    }
+
+    let mut rofi_result = Command::new("rofi")
+        .args(&args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()?;
+
+    // Write input to rofi
+    if let Some(mut stdin) = rofi_result.stdin.take() {
+        use std::io::Write;
+        stdin.write_all(rofi_input.as_bytes())?;
+    }
+
+    let output = rofi_result.wait_with_output()?;
+
+    if !output.status.success() {
+        // User cancelled or rofi failed
+        return Ok(());
+    }
+
+    let selection = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+    if selection.is_empty() {
+        return Ok(());
+    }
+
+    // Check if "Restore All" was selected
+    if selection.contains("Restore All Windows") {
+        restore_all_windows()?;
+        return Ok(());
+    }
+
+    // Extract address from selection (last 4 chars in brackets)
+    if let Some(start) = selection.rfind('[') {
+        if let Some(end) = selection.rfind(']') {
+            let short_addr = &selection[start + 1..end];
+            // Find the window with matching address suffix
+            for window in &windows {
+                if window.address.ends_with(short_addr) {
+                    restore_specific_window(&window.address)?;
+                    return Ok(());
+                }
+            }
+        }
+    }
 
     Ok(())
 }
