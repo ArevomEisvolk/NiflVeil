@@ -1,0 +1,9 @@
+# Build artifacts
+/niflveil/target/
+target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
