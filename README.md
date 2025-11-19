@@ -38,6 +38,11 @@ cargo build --release
 
 # Copy the binary to your path
 sudo cp target/release/niflveil /usr/local/bin/
+
+# Install the rofi restore script
+sudo mkdir -p /usr/local/share/niflveil
+sudo cp scripts/rofi-restore.sh /usr/local/share/niflveil/
+sudo chmod +x /usr/local/share/niflveil/rofi-restore.sh
 ```
 
 ### 2. Add the bindings you want to your Hyprland config:

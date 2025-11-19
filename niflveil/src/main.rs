@@ -200,104 +200,45 @@ fn restore_all_windows() -> io::Result<()> {
 }
 
 fn show_restore_menu() -> io::Result<()> {
-    if !Path::new(CACHE_FILE).exists() {
-        return Ok(());
-    }
-
-    let content = fs::read_to_string(CACHE_FILE)?;
-    let windows = parse_windows_from_json(&content)?;
-
-    if windows.is_empty() {
-        return Ok(());
-    }
-
-    // Build rofi input: each line is "icon class - title [addr]"
-    // We'll use the address as a hidden identifier at the end
-    let mut rofi_input = String::new();
-
-    // Add "Restore All" option if more than one window
-    if windows.len() > 1 {
-        rofi_input.push_str("󰁯 Restore All Windows\n");
-    }
-
-    for window in &windows {
-        rofi_input.push_str(&format!(
-            "{} {} - {} [{}]\n",
-            window.icon,
-            window.class,
-            window.original_title,
-            &window.address[window.address.len().saturating_sub(4)..]
-        ));
-    }
-
-    // Remove trailing newline
-    rofi_input = rofi_input.trim_end().to_string();
-
-    // Run rofi in dmenu mode
-    // Check for custom theme at ~/.config/rofi/niflveil.rasi
+    // Try to find the script in common locations
     let home = env::var("HOME").unwrap_or_default();
-    let theme_path = format!("{}/.config/rofi/niflveil.rasi", home);
-    let theme_exists = Path::new(&theme_path).exists();
-
-    let mut args = vec![
-        "-dmenu".to_string(),
-        "-i".to_string(),
-        "-p".to_string(),
-        "󰘸 Restore Window".to_string(),
-        "-mesg".to_string(),
-        format!("{} minimized window(s)", windows.len()),
+    let script_locations = vec![
+        "/usr/local/share/niflveil/rofi-restore.sh".to_string(),
+        "/usr/share/niflveil/rofi-restore.sh".to_string(),
+        format!("{}/.local/share/niflveil/rofi-restore.sh", home),
     ];
 
-    if theme_exists {
-        args.push("-theme".to_string());
-        args.push(theme_path);
-    } else {
-        // Fallback inline styling
-        args.push("-theme-str".to_string());
-        args.push("window {width: 600px;} listview {lines: 8;}".to_string());
+    let mut script_path = None;
+    for location in &script_locations {
+        if Path::new(location).exists() {
+            script_path = Some(location.clone());
+            break;
+        }
     }
 
-    let mut rofi_result = Command::new("rofi")
-        .args(&args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()?;
-
-    // Write input to rofi
-    if let Some(mut stdin) = rofi_result.stdin.take() {
-        use std::io::Write;
-        stdin.write_all(rofi_input.as_bytes())?;
-    }
-
-    let output = rofi_result.wait_with_output()?;
-
-    if !output.status.success() {
-        // User cancelled or rofi failed
-        return Ok(());
-    }
-
-    let selection = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-    if selection.is_empty() {
-        return Ok(());
-    }
-
-    // Check if "Restore All" was selected
-    if selection.contains("Restore All Windows") {
-        restore_all_windows()?;
-        return Ok(());
-    }
-
-    // Extract address from selection (last 4 chars in brackets)
-    if let Some(start) = selection.rfind('[') {
-        if let Some(end) = selection.rfind(']') {
-            let short_addr = &selection[start + 1..end];
-            // Find the window with matching address suffix
-            for window in &windows {
-                if window.address.ends_with(short_addr) {
-                    restore_specific_window(&window.address)?;
-                    return Ok(());
+    // Fallback: try to find niflveil binary location and look for script there
+    if script_path.is_none() {
+        if let Ok(exe_path) = env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let local_script = exe_dir.join("scripts/rofi-restore.sh");
+                if local_script.exists() {
+                    script_path = Some(local_script.to_string_lossy().to_string());
                 }
+            }
+        }
+    }
+
+    match script_path {
+        Some(path) => {
+            Command::new("bash")
+                .arg(&path)
+                .status()?;
+        }
+        None => {
+            eprintln!("Error: rofi-restore.sh script not found.");
+            eprintln!("Please install it to one of these locations:");
+            for loc in &script_locations {
+                eprintln!("  - {}", loc);
             }
         }
     }
